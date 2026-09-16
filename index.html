@@ -607,7 +607,7 @@ function parseCSV(text){
 }
 
 function buildModulesFromRows(rows){
-  // rows: array of {q, options[4], correct(0-based)}
+  // Flat format fallback: rows = array of {q, options[4], correct(0-based)}, grouped 5-per-module.
   const modules = [];
   for(let i = 0; i < rows.length; i += 5){
     const group = rows.slice(i, i + 5);
@@ -622,6 +622,18 @@ function buildModulesFromRows(rows){
   return modules;
 }
 
+function buildModulesFromLessons(lessonRows){
+  // lessonRows: array of {moduleNum, moduleTitle, lessonTitle, questions[]}, in first-seen order.
+  // Each lesson becomes its own lockable quiz node; moduleTitle is carried along for a group header.
+  return lessonRows.map((lesson, i) => ({
+    id: 'm' + lesson.moduleNum + '-lesson' + (i + 1),
+    title: lesson.lessonTitle,
+    subtitle: lesson.questions.length + ' question' + (lesson.questions.length === 1 ? '' : 's'),
+    moduleGroup: lesson.moduleTitle,
+    questions: lesson.questions
+  }));
+}
+
 async function loadModulesFromCSV(){
   try{
     const res = await fetch('questions.csv', { cache: 'no-store' });
@@ -631,6 +643,68 @@ async function loadModulesFromCSV(){
     if(rows.length < 2) throw new Error('questions.csv has no data rows');
 
     const header = rows[0].map(h => h.trim().toLowerCase());
+    const isHierarchical = header.includes('module') && header.includes('lesson') && header.includes('option_a');
+
+    if(isHierarchical){
+      const idx = {
+        module: header.indexOf('module'),
+        lesson: header.indexOf('lesson'),
+        question: header.indexOf('question'),
+        oa: header.indexOf('option_a'),
+        ob: header.indexOf('option_b'),
+        oc: header.indexOf('option_c'),
+        od: header.indexOf('option_d'),
+        correct: header.indexOf('correct_answer')
+      };
+      if(Object.values(idx).some(v => v === -1)){
+        throw new Error('questions.csv header must include: module,lesson,question,option_a,option_b,option_c,option_d,correct_answer');
+      }
+
+      const letterToIndex = { a: 0, b: 1, c: 2, d: 3 };
+      const lessonMap = new Map(); // key: module||lesson -> lesson entry
+      const lessonOrder = [];
+      const skippedRows = [];
+
+      for(let i = 1; i < rows.length; i++){
+        const r = rows[i];
+        const rowNum = i + 1;
+        if(r.length < header.length){ skippedRows.push(`Row ${rowNum}: expected ${header.length} columns, found ${r.length}`); continue; }
+        const moduleNum = r[idx.module].trim();
+        const lessonTitle = r[idx.lesson].trim();
+        const questionText = r[idx.question].trim();
+        const options = [r[idx.oa].trim(), r[idx.ob].trim(), r[idx.oc].trim(), r[idx.od].trim()];
+        const correctLetter = r[idx.correct].trim().toLowerCase();
+        if(!moduleNum || !lessonTitle){ skippedRows.push(`Row ${rowNum}: missing module or lesson`); continue; }
+        if(!questionText){ skippedRows.push(`Row ${rowNum}: missing question text`); continue; }
+        if(options.some(o => !o)){ skippedRows.push(`Row ${rowNum}: one or more options are empty`); continue; }
+        if(!(correctLetter in letterToIndex)){ skippedRows.push(`Row ${rowNum}: "correct_answer" must be A, B, C, or D (found "${r[idx.correct]}")`); continue; }
+
+        const key = moduleNum + '||' + lessonTitle;
+        if(!lessonMap.has(key)){
+          const entry = { moduleNum, moduleTitle: 'Module ' + moduleNum, lessonTitle, questions: [] };
+          lessonMap.set(key, entry);
+          lessonOrder.push(key);
+        }
+        lessonMap.get(key).questions.push({
+          q: questionText,
+          options,
+          correct: letterToIndex[correctLetter]
+        });
+      }
+
+      if(skippedRows.length){
+        console.warn(`questions.csv: skipped ${skippedRows.length} invalid row(s):\n` + skippedRows.join('\n'));
+      }
+      const lessonRows = lessonOrder.map(k => lessonMap.get(k));
+      if(!lessonRows.length) throw new Error('questions.csv had no valid question rows');
+
+      MODULES = buildModulesFromLessons(lessonRows);
+      const totalQ = lessonRows.reduce((sum, l) => sum + l.questions.length, 0);
+      console.info(`Loaded ${totalQ} questions into ${MODULES.length} lesson quizzes (grouped under ${new Set(lessonRows.map(l=>l.moduleNum)).size} modules) from questions.csv`);
+      return;
+    }
+
+    // Flat format: question,option1,option2,option3,option4,correct
     const idx = {
       question: header.indexOf('question'),
       o1: header.indexOf('option1'),
@@ -816,14 +890,22 @@ async function renderHome(){
 
   const pathEl = document.getElementById('pathList');
   pathEl.innerHTML = '';
+  let lastGroup = null;
   MODULES.forEach((mod, i) => {
+    if(mod.moduleGroup && mod.moduleGroup !== lastGroup){
+      lastGroup = mod.moduleGroup;
+      const header = document.createElement('div');
+      header.style.cssText = 'margin:28px 0 8px; padding-bottom:6px; border-bottom:1px solid var(--line); font-weight:700; font-size:13px; letter-spacing:.04em; text-transform:uppercase; color:var(--forest);';
+      header.textContent = mod.moduleGroup;
+      pathEl.appendChild(header);
+    }
     const state = getModuleState(i, completedIds);
     const done = completedIds.has(mod.id);
     const node = document.createElement('div');
     node.className = 'path-node' + (state === 'locked' ? ' locked' : '');
     const caption = state === 'locked'
       ? `Unlocks after ${MODULES[i - 1].title}`
-      : `5 questions · ${mod.subtitle}${done ? ' · Completed' : ''}`;
+      : `${mod.subtitle}${done ? ' · Completed' : ''}`;
     node.innerHTML = `
       <button class="dot" ${state === 'locked' ? 'disabled' : ''} onclick="goTo('quiz','${mod.id}')">
         ${state === 'locked' ? lockIconSvg : leafIconSvg}
