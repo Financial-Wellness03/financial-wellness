@@ -285,8 +285,9 @@
     <div class="topbar">
       <svg width="30" height="30" viewBox="0 0 100 100"><use href="#treeIcon"/></svg>
       <div class="wordmark">Financial Wellness</div>
-      <div style="margin-left:auto;">
+      <div style="margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
         <button class="link-btn" onclick="logout()">Log out</button>
+        <button class="link-btn" onclick="goTo('progress')">View my progress</button>
       </div>
     </div>
     <div class="greeting">
@@ -304,7 +305,6 @@
 
     <div class="home-actions">
       <button class="btn" id="startQuizBtn" onclick="startNextModule()">Start Quiz</button>
-      <button class="btn outline" onclick="goTo('progress')">View my progress</button>
     </div>
   </div>
 
