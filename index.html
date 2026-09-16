@@ -102,6 +102,14 @@
     font-family:'Nunito'; cursor:pointer; font-size:14px; padding:0;
   }
 
+  .pill-btn{
+    background:var(--card); border:2px solid var(--line); color:var(--forest);
+    font-family:'Nunito'; font-weight:800; cursor:pointer; font-size:13px;
+    padding:6px 14px; border-radius:999px; transition:transform .05s ease, background .15s ease;
+  }
+  .pill-btn:active{transform:translateY(1px);}
+  .pill-btn:hover{background:var(--meadow); color:#fff; border-color:var(--meadow);}
+
   /* ---------- inputs ---------- */
   .field{margin-bottom:14px;}
   .field label{font-size:13px; font-weight:800; color:var(--ink-soft); display:block; margin-bottom:6px;}
@@ -285,9 +293,9 @@
     <div class="topbar">
       <svg width="30" height="30" viewBox="0 0 100 100"><use href="#treeIcon"/></svg>
       <div class="wordmark">Financial Wellness</div>
-      <div style="margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+      <div style="margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
         <button class="link-btn" onclick="logout()">Log out</button>
-        <button class="link-btn" onclick="goTo('progress')">View my progress</button>
+        <button class="pill-btn" onclick="goTo('progress')">View my progress</button>
       </div>
     </div>
     <div class="greeting">
