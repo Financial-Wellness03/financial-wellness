@@ -39,7 +39,7 @@
     color:var(--forest);
   }
 
-  /* decorative background motifs, echoing the tree/leaf/coin mark */
+  /* decorative background motifs, with an echoing the tree/leaf/coin mark */
   .bg-decor{position:fixed; inset:0; z-index:0; pointer-events:none;}
   .bg-decor svg{position:absolute; opacity:0.5;}
 
@@ -72,7 +72,7 @@
   .screen{display:none; flex:1; flex-direction:column; padding:0 24px 32px;}
   .screen.active{display:flex;}
 
-  /* ---------- buttons: chunky "press" style ---------- */
+  /* ---------- buttons ---------- */
   .btn{
     font-family:'Fredoka';
     font-size:16px;
@@ -299,7 +299,7 @@
       </div>
     </div>
     <div class="greeting">
-      <h1 id="homeGreeting">Hi there 👋</h1>
+      <h1 id="homeGreeting">Hi there </h1>
       <p id="homeSub">Ready to grow your money skills today?</p>
     </div>
 
@@ -359,7 +359,7 @@
 
 </div>
 
-<!-- shared icon defs -->
+<!-- shared icon -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
     <g id="treeIcon">
@@ -378,10 +378,9 @@
 
 <script>
 /* ---------------- storage helpers (localStorage-backed, with in-memory fallback) ---------------- */
-/* window.storage only exists inside Claude's own artifact preview, not on a published site
-   like GitHub Pages. On GitHub Pages this uses localStorage instead, which actually persists
+/*  On GitHub Pages this uses localStorage instead, which actually persists
    on that browser/device across refreshes and tab closes (until cleared or a real backend
-   database replaces this). */
+   database replaces this...waiting on mySQL to be added). */
 const memStore = {};
 async function storageSet(key, value){
   try{
@@ -411,7 +410,7 @@ document.getElementById('bgDecor').innerHTML = `
   <svg viewBox="0 0 24 24" width="40" style="bottom:120px; left:-10px;"><circle cx="12" cy="12" r="10" fill="#1B5E44" opacity="0.1"/></svg>
 `;
 
-/* ---------------- fallback quiz content (used if questions.csv isn't found) ---------------- */
+/* ---------------- fallback quiz content (basically the default, used if questions.csv isn't found) ---------------- */
 const FALLBACK_MODULES = [
   {
     id: 'money-basics',
@@ -879,7 +878,7 @@ const leafIconSvg = '<svg width="28" height="28" viewBox="0 0 100 100"><use href
 
 async function renderHome(){
   if(!currentUser) return;
-  document.getElementById('homeGreeting').textContent = `Hi, ${currentUser.name} 👋`;
+  document.getElementById('homeGreeting').textContent = `Hi, ${currentUser.name} `;
   document.getElementById('homeSub').textContent = `${currentUser.grade} · ready for today's test?`;
 
   const results = (await storageGet('results:' + currentUser.username)) || [];
