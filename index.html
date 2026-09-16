@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financial Wellness</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
+
+  :root{
+    --forest:#1B5E44;
+    --meadow:#2FA671;
+    --meadow-dark:#1F7E56;
+    --gold:#D9A73D;
+    --gold-dark:#B5842A;
+    --cream:#FBF6EA;
+    --card:#FFFFFF;
+    --ink:#1E2A22;
+    --ink-soft:#66766A;
+    --brick:#B3452F;
+    --brick-dark:#8F371F;
+    --line:#E7E0CF;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  body{
+    font-family:'Nunito', sans-serif;
+    background:var(--cream);
+    color:var(--ink);
+    min-height:100vh;
+    position:relative;
+    overflow-x:hidden;
+  }
+
+  h1,h2,h3,.display{
+    font-family:'Fredoka', sans-serif;
+    font-weight:600;
+    color:var(--forest);
+  }
+
+  /* decorative background motifs, echoing the tree/leaf/coin mark */
+  .bg-decor{position:fixed; inset:0; z-index:0; pointer-events:none;}
+  .bg-decor svg{position:absolute; opacity:0.5;}
+
+  .stage{
+    position:relative;
+    z-index:1;
+    max-width:440px;
+    margin:0 auto;
+    min-height:100vh;
+    background:var(--cream);
+    display:flex;
+    flex-direction:column;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:22px 24px 14px;
+  }
+  .topbar .wordmark{
+    font-family:'Fredoka';
+    font-weight:600;
+    font-size:18px;
+    color:var(--forest);
+    letter-spacing:0.2px;
+  }
+  .topbar .wordmark span{color:var(--gold-dark); font-weight:500; font-size:12px; display:block; margin-top:-2px;}
+
+  .screen{display:none; flex:1; flex-direction:column; padding:0 24px 32px;}
+  .screen.active{display:flex;}
+
+  /* ---------- buttons: chunky "press" style ---------- */
+  .btn{
+    font-family:'Fredoka';
+    font-size:16px;
+    font-weight:600;
+    color:#fff;
+    border:none;
+    border-radius:16px;
+    padding:15px 20px;
+    cursor:pointer;
+    width:100%;
+    background:var(--meadow);
+    box-shadow:0 4px 0 var(--meadow-dark);
+    transition:transform .05s ease, box-shadow .05s ease;
+  }
+  .btn:active{transform:translateY(3px); box-shadow:0 1px 0 var(--meadow-dark);}
+  .btn:disabled{opacity:0.45; cursor:not-allowed;}
+  .btn.gold{background:var(--gold); box-shadow:0 4px 0 var(--gold-dark); color:#3A2C0B;}
+  .btn.gold:active{box-shadow:0 1px 0 var(--gold-dark);}
+  .btn.outline{
+    background:transparent; color:var(--forest); box-shadow:none;
+    border:2px solid var(--line); 
+  }
+  .btn.outline:active{transform:translateY(1px);}
+
+  .link-btn{
+    background:none; border:none; color:var(--meadow-dark); font-weight:800;
+    font-family:'Nunito'; cursor:pointer; font-size:14px; padding:0;
+  }
+
+  /* ---------- inputs ---------- */
+  .field{margin-bottom:14px;}
+  .field label{font-size:13px; font-weight:800; color:var(--ink-soft); display:block; margin-bottom:6px;}
+  .field input, .field select{
+    width:100%; padding:13px 14px; border-radius:12px; border:2px solid var(--line);
+    font-family:'Nunito'; font-size:15px; font-weight:600; color:var(--ink);
+    background:#fff; outline:none;
+  }
+  .field input:focus, .field select:focus{border-color:var(--meadow);}
+
+  .form-error{
+    background:#FBEAE5; color:var(--brick-dark); font-weight:700; font-size:13px;
+    padding:10px 12px; border-radius:10px; margin-bottom:14px; display:none;
+  }
+
+  /* ---------- login / signup ---------- */
+  .auth-hero{padding:8px 0 20px; text-align:center;}
+  .auth-hero .tree-lg{width:88px; height:88px; margin:6px auto 10px;}
+  .auth-hero h1{font-size:24px; line-height:1.15;}
+  .auth-hero p{color:var(--ink-soft); font-size:14px; margin-top:6px; font-weight:600;}
+  .auth-switch{text-align:center; margin-top:16px; font-size:14px; font-weight:700; color:var(--ink-soft);}
+
+  /* ---------- home ---------- */
+  .greeting{padding:6px 0 4px;}
+  .greeting h1{font-size:22px;}
+  .greeting p{color:var(--ink-soft); font-weight:700; font-size:14px; margin-top:2px;}
+
+  .streak-row{display:flex; gap:10px; margin:16px 0 22px;}
+  .stat-chip{
+    flex:1; background:var(--card); border-radius:14px; padding:12px;
+    text-align:center; border:1px solid var(--line);
+  }
+  .stat-chip .num{font-family:'Fredoka'; font-size:20px; color:var(--forest);}
+  .stat-chip .lbl{font-size:11px; font-weight:800; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.4px;}
+
+  .path{position:relative; padding:6px 0 10px 0;}
+  .path::before{
+    content:''; position:absolute; left:29px; top:22px; bottom:22px; width:3px;
+    background:repeating-linear-gradient(to bottom, var(--line) 0 6px, transparent 6px 12px);
+  }
+  .path-node{display:flex; align-items:center; gap:16px; margin-bottom:22px; position:relative;}
+  .path-node .dot{
+    width:60px; height:60px; border-radius:50%; background:var(--meadow);
+    box-shadow:0 4px 0 var(--meadow-dark); display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; z-index:1; cursor:pointer; border:none;
+  }
+  .path-node .dot svg{width:28px; height:28px;}
+  .path-node.locked .dot{background:#DCE0D6; box-shadow:0 4px 0 #C3C9BC; cursor:default;}
+  .path-node .info h3{font-size:15px; color:var(--ink); font-family:'Fredoka'; font-weight:600;}
+  .path-node .info p{font-size:12.5px; color:var(--ink-soft); font-weight:700; margin-top:2px;}
+
+  .home-actions{margin-top:6px; display:flex; flex-direction:column; gap:10px;}
+
+  /* ---------- quiz ---------- */
+  .quiz-top{display:flex; align-items:center; gap:12px; padding-top:4px;}
+  .quiz-top button.exit{background:none; border:none; font-size:20px; color:var(--ink-soft); cursor:pointer; line-height:1;}
+  .vine{flex:1; height:14px; background:#E3DEC9; border-radius:8px; position:relative; overflow:hidden;}
+  .vine-fill{height:100%; background:var(--meadow); border-radius:8px; transition:width .3s ease;}
+
+  .q-wrap{flex:1; display:flex; flex-direction:column; padding-top:28px;}
+  .q-wrap .q-count{font-size:12px; font-weight:800; color:var(--gold-dark); text-transform:uppercase; letter-spacing:.5px;}
+  .q-wrap h2{font-size:21px; margin-top:8px; line-height:1.3;}
+
+  .options{margin-top:24px; display:flex; flex-direction:column; gap:12px;}
+  .option{
+    text-align:left; background:var(--card); border:2px solid var(--line); border-radius:14px;
+    padding:14px 16px; font-family:'Nunito'; font-weight:700; font-size:15px; color:var(--ink);
+    cursor:pointer; transition:border-color .12s ease, background .12s ease;
+  }
+  .option:hover{border-color:var(--meadow);}
+  .option.selected{border-color:var(--meadow); background:#EAF7F0;}
+  .option.correct{border-color:var(--meadow); background:#DCF3E5; color:var(--forest);}
+  .option.incorrect{border-color:var(--brick); background:#FBEAE5; color:var(--brick-dark);}
+  .option:disabled{cursor:default;}
+
+  .q-footer{margin-top:auto; padding-top:22px;}
+
+  /* ---------- results ---------- */
+  .results-wrap{flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; padding-top:18px;}
+  .badge-ring{
+    width:132px; height:132px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:var(--card); border:6px solid var(--gold); margin-bottom:16px;
+  }
+  .badge-ring .score-num{font-family:'Fredoka'; font-size:34px; color:var(--forest);}
+  .results-wrap h1{font-size:22px;}
+  .results-wrap .tier{color:var(--gold-dark); font-weight:800; font-size:14px; margin-top:4px;}
+  .results-wrap .msg{color:var(--ink-soft); font-weight:700; font-size:14px; margin-top:10px; max-width:280px;}
+
+  .breakdown{width:100%; margin-top:24px; text-align:left;}
+  .breakdown-item{
+    display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--line);
+  }
+  .breakdown-item:last-child{border-bottom:none;}
+  .breakdown-item .mark{font-size:16px; margin-top:1px;}
+  .breakdown-item .txt{font-size:13.5px; font-weight:700; color:var(--ink); line-height:1.4;}
+  .breakdown-item .txt .sub{display:block; color:var(--ink-soft); font-weight:600; font-size:12.5px; margin-top:2px;}
+
+  .results-actions{width:100%; display:flex; flex-direction:column; gap:10px; margin-top:26px;}
+
+  /* ---------- progress ---------- */
+  .progress-list{margin-top:18px; display:flex; flex-direction:column; gap:10px;}
+  .progress-item{
+    background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px;
+    display:flex; align-items:center; justify-content:between; gap:10px;
+  }
+  .progress-item .pi-left{flex:1;}
+  .progress-item h3{font-size:14.5px; font-family:'Fredoka'; font-weight:600; color:var(--ink);}
+  .progress-item p{font-size:12px; color:var(--ink-soft); font-weight:700; margin-top:2px;}
+  .progress-item .pi-score{font-family:'Fredoka'; font-size:17px; color:var(--forest);}
+  .empty-state{text-align:center; padding:40px 10px; color:var(--ink-soft); font-weight:700; font-size:14px;}
+
+  .back-row{display:flex; align-items:center; gap:12px; padding-top:4px;}
+  .back-row button.back{background:none; border:none; font-size:20px; color:var(--ink-soft); cursor:pointer;}
+  .back-row h1{font-size:19px;}
+
+  .save-note{font-size:11.5px; color:var(--ink-soft); text-align:center; margin-top:auto; padding-top:18px; font-weight:600;}
+</style>
+</head>
+<body>
+
+<div class="bg-decor" id="bgDecor"></div>
+
+<div class="stage">
+
+  <!-- ============ LOGIN ============ -->
+  <div class="screen active" id="screen-login">
+    <div class="auth-hero">
+      <svg class="tree-lg" viewBox="0 0 100 100"><use href="#treeIcon"/></svg>
+      <h1>Financial Wellness</h1>
+      <p>Learn it. Practice it. Grow it.</p>
+    </div>
+    <div class="form-error" id="loginError"></div>
+    <form id="loginForm">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="loginUsername" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn">Log in</button>
+    </form>
+    <div class="auth-switch">New here? <button class="link-btn" onclick="goTo('signup')">Create an account</button></div>
+  </div>
+
+  <!-- ============ SIGNUP ============ -->
+  <div class="screen" id="screen-signup">
+    <div class="topbar" style="padding-left:0;">
+      <button class="back" onclick="goTo('login')" style="background:none;border:none;font-size:20px;color:var(--ink-soft);cursor:pointer;">←</button>
+    </div>
+    <div class="auth-hero" style="padding-top:0;">
+      <h1>Create your account</h1>
+      <p>It only takes a minute</p>
+    </div>
+    <div class="form-error" id="signupError"></div>
+    <form id="signupForm">
+      <div class="field">
+        <label>First name</label>
+        <input type="text" id="signupName" required>
+      </div>
+      <div class="field">
+        <label>Grade / class</label>
+        <input type="text" id="signupGrade" placeholder="e.g. Grade 6B" required>
+      </div>
+      <div class="field">
+        <label>Choose a username</label>
+        <input type="text" id="signupUsername" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label>Choose a password</label>
+        <input type="password" id="signupPassword" autocomplete="new-password" required>
+      </div>
+      <button type="submit" class="btn gold">Create account</button>
+    </form>
+    <div class="auth-switch">Already have an account? <button class="link-btn" onclick="goTo('login')">Log in</button></div>
+  </div>
+
+  <!-- ============ HOME ============ -->
+  <div class="screen" id="screen-home">
+    <div class="topbar">
+      <svg width="30" height="30" viewBox="0 0 100 100"><use href="#treeIcon"/></svg>
+      <div class="wordmark">Financial Wellness</div>
+      <div style="margin-left:auto;">
+        <button class="link-btn" onclick="logout()">Log out</button>
+      </div>
+    </div>
+    <div class="greeting">
+      <h1 id="homeGreeting">Hi there 👋</h1>
+      <p id="homeSub">Ready to grow your money skills today?</p>
+    </div>
+
+    <div class="streak-row">
+      <div class="stat-chip"><div class="num" id="statAttempts">0</div><div class="lbl">Tests taken</div></div>
+      <div class="stat-chip"><div class="num" id="statBest">–</div><div class="lbl">Best score</div></div>
+      <div class="stat-chip"><div class="num" id="statAvg">–</div><div class="lbl">Average</div></div>
+    </div>
+
+    <div class="path" id="pathList"></div>
+
+    <div class="home-actions">
+      <button class="btn" id="startQuizBtn" onclick="startNextModule()">Start Quiz</button>
+      <button class="btn outline" onclick="goTo('progress')">View my progress</button>
+    </div>
+  </div>
+
+  <!-- ============ QUIZ ============ -->
+  <div class="screen" id="screen-quiz">
+    <div class="quiz-top">
+      <button class="exit" onclick="exitQuiz()">✕</button>
+      <div class="vine"><div class="vine-fill" id="vineFill" style="width:0%"></div></div>
+    </div>
+    <div class="q-wrap">
+      <div class="q-count" id="qCount">Question 1 of 5</div>
+      <h2 id="qText">Question text</h2>
+      <div class="options" id="qOptions"></div>
+      <div class="q-footer">
+        <button class="btn" id="qNextBtn" disabled onclick="nextQuestion()">Check</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RESULTS ============ -->
+  <div class="screen" id="screen-results">
+    <div class="results-wrap">
+      <div class="badge-ring"><div class="score-num" id="resultScore">0/5</div></div>
+      <h1 id="resultTier">Great effort!</h1>
+      <div class="tier" id="resultPct">0%</div>
+      <p class="msg" id="resultMsg">Keep practicing your money skills.</p>
+      <div class="breakdown" id="resultBreakdown"></div>
+      <div class="results-actions">
+        <button class="btn" onclick="goTo('quiz')">Try again</button>
+        <button class="btn outline" onclick="goTo('home')">Back to home</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PROGRESS ============ -->
+  <div class="screen" id="screen-progress">
+    <div class="back-row">
+      <button class="back" onclick="goTo('home')">←</button>
+      <h1>My progress</h1>
+    </div>
+    <div class="progress-list" id="progressList"></div>
+    <div class="save-note">Scores are saved so you and your teacher can see how you're growing.</div>
+  </div>
+
+</div>
+
+<!-- shared icon defs -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <g id="treeIcon">
+      <path d="M50 78 L50 50" stroke="#1B5E44" stroke-width="7" stroke-linecap="round"/>
+      <path d="M20 82 Q50 70 80 82" stroke="#D9A73D" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <circle cx="50" cy="34" r="22" fill="#1B5E44"/>
+      <circle cx="32" cy="42" r="15" fill="#1B5E44"/>
+      <circle cx="68" cy="42" r="15" fill="#1B5E44"/>
+      <path d="M48 24 L42 36 L49 36 L44 48 L58 32 L50 32 Z" fill="#D9A73D"/>
+    </g>
+    <g id="leafIcon">
+      <path d="M4 20 C4 8 16 4 20 4 C20 8 16 20 4 20 Z" fill="#fff"/>
+    </g>
+  </defs>
+</svg>
+
+<script>
+/* ---------------- storage helpers (with in-memory fallback) ---------------- */
+const memStore = {};
+async function storageSet(key, value){
+  try{
+    if(window.storage){ await window.storage.set(key, JSON.stringify(value), false); return; }
+  }catch(e){ console.warn('storage set failed, using memory fallback', e); }
+  memStore[key] = JSON.stringify(value);
+}
+async function storageGet(key){
+  try{
+    if(window.storage){
+      const res = await window.storage.get(key, false);
+      return res ? JSON.parse(res.value) : null;
+    }
+  }catch(e){ /* key not found or storage unavailable */ }
+  return memStore[key] ? JSON.parse(memStore[key]) : null;
+}
+
+/* ---------------- decorative background ---------------- */
+document.getElementById('bgDecor').innerHTML = `
+  <svg viewBox="0 0 100 100" width="140" style="top:60px; left:-40px;"><use href="#leafIcon" fill="#2FA671" opacity="0.15"/></svg>
+  <svg viewBox="0 0 24 24" width="60" style="top:220px; right:-20px;"><circle cx="12" cy="12" r="10" fill="#D9A73D" opacity="0.18"/></svg>
+  <svg viewBox="0 0 24 24" width="40" style="bottom:120px; left:-10px;"><circle cx="12" cy="12" r="10" fill="#1B5E44" opacity="0.1"/></svg>
+`;
+
+/* ---------------- fallback quiz content (used if questions.csv isn't found) ---------------- */
+const FALLBACK_MODULES = [
+  {
+    id: 'money-basics',
+    title: 'Money Basics',
+    subtitle: 'Budgeting &amp; saving',
+    questions: [
+      {
+        q: "What is a budget?",
+        options: [
+          "A list of your favorite games",
+          "A plan for how you'll spend and save money",
+          "A type of bank account",
+          "A prize you win"
+        ],
+        correct: 1
+      },
+      {
+        q: "Which of these is a need, not a want?",
+        options: ["A new video game", "Bread and milk", "Designer sneakers", "A candy bar"],
+        correct: 1
+      },
+      {
+        q: "If you save 10 every week, how much will you have after 4 weeks?",
+        options: ["14", "40", "100", "4"],
+        correct: 1
+      },
+      {
+        q: "What does a bank help you do with your money?",
+        options: ["Spend it all quickly", "Keep it safe and help it grow", "Hide it under your bed", "Give it away"],
+        correct: 1
+      },
+      {
+        q: "Why is it smart to save money before you spend it?",
+        options: [
+          "So you have money for emergencies and goals",
+          "Because spending is against the rules",
+          "Because saving looks cool",
+          "It isn't smart, spending is better"
+        ],
+        correct: 0
+      }
+    ]
+  },
+  {
+    id: 'earning-spending',
+    title: 'Earning & Spending',
+    subtitle: 'Where money comes from',
+    questions: [
+      {
+        q: "Which of these is a way to earn money?",
+        options: ["Doing chores for an allowance", "Wishing for it", "Finding it in a dream", "Waiting for your birthday"],
+        correct: 0
+      },
+      {
+        q: "What does it mean to \"spend wisely\"?",
+        options: ["Buying whatever looks fun first", "Thinking before you buy, and checking if you can afford it", "Spending all your money on the same day", "Never buying anything ever"],
+        correct: 1
+      },
+      {
+        q: "If you earn 50 and spend 30, how much do you have left?",
+        options: ["10", "20", "30", "80"],
+        correct: 1
+      },
+      {
+        q: "Which is an example of a bill someone might pay?",
+        options: ["Electricity", "A birthday gift", "A toy", "A sticker"],
+        correct: 0
+      },
+      {
+        q: "Why might someone make a shopping list before spending money?",
+        options: ["To spend more on things they don't need", "To stay focused on what they actually need", "It has no real purpose", "To impress their friends"],
+        correct: 1
+      }
+    ]
+  },
+  {
+    id: 'banking-101',
+    title: 'Banking 101',
+    subtitle: 'How banks work',
+    questions: [
+      {
+        q: "What is a savings account mainly used for?",
+        options: ["Losing money", "Keeping money safe while it grows a little over time", "Buying snacks instantly", "Nothing important"],
+        correct: 1
+      },
+      {
+        q: "What is interest, in simple terms?",
+        options: ["A fee you pay for talking to the bank", "Extra money the bank can add to your savings over time", "A password", "A type of coin"],
+        correct: 1
+      },
+      {
+        q: "Why is it a good idea to keep money in a bank instead of at home?",
+        options: ["It's not any safer either way", "Banks help protect your money and can help it grow", "Banks charge you just for walking in", "It disappears faster in a bank"],
+        correct: 1
+      },
+      {
+        q: "What might a bank card be used for?",
+        options: ["Only for decoration", "Paying for things without carrying cash", "Cooking food", "Nothing at all"],
+        correct: 1
+      },
+      {
+        q: "What's a smart first step before opening any bank account?",
+        options: ["Understanding what the account offers and any rules that come with it", "Just picking the first one you see", "Skipping any questions", "Asking a stranger for advice"],
+        correct: 0
+      }
+    ]
+  },
+  {
+    // PLACEHOLDER MODULE — replace questions with confirmed CSV content
+    id: 'module-4-placeholder',
+    title: 'Module 4 (placeholder)',
+    subtitle: 'Replace with real content',
+    questions: [
+      {
+        q: "Placeholder question 1 — replace me",
+        options: ["Option A", "Option B (correct)", "Option C", "Option D"],
+        correct: 1
+      },
+      {
+        q: "Placeholder question 2 — replace me",
+        options: ["Option A", "Option B", "Option C (correct)", "Option D"],
+        correct: 2
+      },
+      {
+        q: "Placeholder question 3 — replace me",
+        options: ["Option A (correct)", "Option B", "Option C", "Option D"],
+        correct: 0
+      },
+      {
+        q: "Placeholder question 4 — replace me",
+        options: ["Option A", "Option B", "Option C", "Option D (correct)"],
+        correct: 3
+      },
+      {
+        q: "Placeholder question 5 — replace me",
+        options: ["Option A", "Option B (correct)", "Option C", "Option D"],
+        correct: 1
+      }
+    ]
+  },
+  {
+    // PLACEHOLDER MODULE — replace questions with confirmed CSV content
+    id: 'module-5-placeholder',
+    title: 'Module 5 (placeholder)',
+    subtitle: 'Replace with real content',
+    questions: [
+      {
+        q: "Placeholder question 1 — replace me",
+        options: ["Option A", "Option B (correct)", "Option C", "Option D"],
+        correct: 1
+      },
+      {
+        q: "Placeholder question 2 — replace me",
+        options: ["Option A", "Option B", "Option C (correct)", "Option D"],
+        correct: 2
+      },
+      {
+        q: "Placeholder question 3 — replace me",
+        options: ["Option A (correct)", "Option B", "Option C", "Option D"],
+        correct: 0
+      },
+      {
+        q: "Placeholder question 4 — replace me",
+        options: ["Option A", "Option B", "Option C", "Option D (correct)"],
+        correct: 3
+      },
+      {
+        q: "Placeholder question 5 — replace me",
+        options: ["Option A", "Option B (correct)", "Option C", "Option D"],
+        correct: 1
+      }
+    ]
+  }
+];
+
+/* ---------------- CSV loading: builds MODULES from questions.csv, 5 questions per module ---------------- */
+/* Expected CSV columns (header row required): question,option1,option2,option3,option4,correct
+   "correct" is 1-based (1 = option1, 2 = option2, etc.) */
+let MODULES = FALLBACK_MODULES;
+
+function parseCSV(text){
+  // Handles quoted fields (with commas/quotes inside) and both \n and \r\n line endings.
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for(let i = 0; i < text.length; i++){
+    const c = text[i], next = text[i+1];
+    if(inQuotes){
+      if(c === '"' && next === '"'){ field += '"'; i++; }
+      else if(c === '"'){ inQuotes = false; }
+      else { field += c; }
+    } else {
+      if(c === '"'){ inQuotes = true; }
+      else if(c === ','){ row.push(field); field = ''; }
+      else if(c === '\r'){ /* skip */ }
+      else if(c === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
+      else { field += c; }
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(cell => cell.trim() !== ''));
+}
+
+function buildModulesFromRows(rows){
+  // rows: array of {q, options[4], correct(0-based)}
+  const modules = [];
+  for(let i = 0; i < rows.length; i += 5){
+    const group = rows.slice(i, i + 5);
+    const moduleNum = modules.length + 1;
+    modules.push({
+      id: 'module-' + moduleNum,
+      title: 'Module ' + moduleNum,
+      subtitle: group.length < 5 ? 'Partial set (' + group.length + ' questions)' : '5 questions',
+      questions: group
+    });
+  }
+  return modules;
+}
+
+async function loadModulesFromCSV(){
+  try{
+    const res = await fetch('questions.csv', { cache: 'no-store' });
+    if(!res.ok) throw new Error('questions.csv not found (status ' + res.status + ')');
+    const text = await res.text();
+    const rows = parseCSV(text);
+    if(rows.length < 2) throw new Error('questions.csv has no data rows');
+
+    const header = rows[0].map(h => h.trim().toLowerCase());
+    const idx = {
+      question: header.indexOf('question'),
+      o1: header.indexOf('option1'),
+      o2: header.indexOf('option2'),
+      o3: header.indexOf('option3'),
+      o4: header.indexOf('option4'),
+      correct: header.indexOf('correct')
+    };
+    if(Object.values(idx).some(v => v === -1)){
+      throw new Error('questions.csv header must be: question,option1,option2,option3,option4,correct');
+    }
+
+    const parsedQuestions = [];
+    const skippedRows = [];
+    for(let i = 1; i < rows.length; i++){
+      const r = rows[i];
+      const rowNum = i + 1; // +1 to account for header row, matches spreadsheet row numbers
+      if(r.length < 6){ skippedRows.push(`Row ${rowNum}: expected 6 columns, found ${r.length}`); continue; }
+      const questionText = r[idx.question].trim();
+      const options = [r[idx.o1].trim(), r[idx.o2].trim(), r[idx.o3].trim(), r[idx.o4].trim()];
+      const correctNum = parseInt(r[idx.correct], 10);
+      if(!questionText){ skippedRows.push(`Row ${rowNum}: missing question text`); continue; }
+      if(options.some(o => !o)){ skippedRows.push(`Row ${rowNum}: one or more options are empty`); continue; }
+      if(isNaN(correctNum) || correctNum < 1 || correctNum > 4){
+        skippedRows.push(`Row ${rowNum}: "correct" must be 1, 2, 3, or 4 (found "${r[idx.correct]}")`);
+        continue;
+      }
+      parsedQuestions.push({
+        q: questionText,
+        options,
+        correct: correctNum - 1 // convert 1-based (spreadsheet-friendly) to 0-based (code-friendly)
+      });
+    }
+
+    if(skippedRows.length){
+      console.warn(`questions.csv: skipped ${skippedRows.length} invalid row(s):\n` + skippedRows.join('\n'));
+    }
+    if(!parsedQuestions.length) throw new Error('questions.csv had no valid question rows');
+
+    MODULES = buildModulesFromRows(parsedQuestions);
+    console.info(`Loaded ${parsedQuestions.length} questions into ${MODULES.length} modules from questions.csv`);
+  }catch(e){
+    console.warn('Falling back to built-in sample questions:', e.message);
+    MODULES = FALLBACK_MODULES;
+  }
+}
+
+/* ---------------- app state ---------------- */
+/* currentUser is mirrored to sessionStorage so a refresh doesn't log the user out,
+   but closing the tab/browser clears sessionStorage automatically, ending the session. */
+function saveSession(user){
+  try{ sessionStorage.setItem('currentUser', JSON.stringify(user)); }catch(e){ /* ignore */ }
+}
+function clearSession(){
+  try{ sessionStorage.removeItem('currentUser'); }catch(e){ /* ignore */ }
+}
+function loadSession(){
+  try{
+    const raw = sessionStorage.getItem('currentUser');
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+
+let currentUser = loadSession();
+let currentModule = null;
+let quizState = { index: 0, answers: [], locked: false };
+
+function getCompletedModuleIds(results){
+  return new Set(results.map(r => r.moduleId));
+}
+
+function getModuleState(moduleIndex, completedIds){
+  if(moduleIndex === 0) return 'unlocked';
+  return completedIds.has(MODULES[moduleIndex - 1].id) ? 'unlocked' : 'locked';
+}
+
+function pickNextModule(completedIds){
+  for(const mod of MODULES){
+    if(!completedIds.has(mod.id)) return mod;
+  }
+  return MODULES[MODULES.length - 1];
+}
+
+function goTo(name, moduleId){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  if(name === 'home') renderHome();
+  if(name === 'quiz') startQuiz(moduleId || currentModule.id);
+  if(name === 'progress') renderProgress();
+  window.scrollTo(0,0);
+}
+
+/* ---------------- auth ---------------- */
+document.getElementById('signupForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('signupName').value.trim();
+  const grade = document.getElementById('signupGrade').value.trim();
+  const username = document.getElementById('signupUsername').value.trim().toLowerCase();
+  const password = document.getElementById('signupPassword').value;
+  const err = document.getElementById('signupError');
+  err.style.display = 'none';
+
+  if(!name || !grade || !username || !password){
+    err.textContent = 'Please fill in every field.';
+    err.style.display = 'block';
+    return;
+  }
+
+  const existing = await storageGet('account:' + username);
+  if(existing){
+    err.textContent = 'That username is taken. Try another one.';
+    err.style.display = 'block';
+    return;
+  }
+
+  const account = { name, grade, username, password };
+  await storageSet('account:' + username, account);
+  currentUser = account;
+  saveSession(account);
+  document.getElementById('signupForm').reset();
+  goTo('home');
+});
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('loginUsername').value.trim().toLowerCase();
+  const password = document.getElementById('loginPassword').value;
+  const err = document.getElementById('loginError');
+  err.style.display = 'none';
+
+  const account = await storageGet('account:' + username);
+  if(!account || account.password !== password){
+    err.textContent = "We couldn't find that username and password.";
+    err.style.display = 'block';
+    return;
+  }
+  currentUser = account;
+  saveSession(account);
+  document.getElementById('loginForm').reset();
+  goTo('home');
+});
+
+function logout(){
+  currentUser = null;
+  clearSession();
+  goTo('login');
+}
+
+/* ---------------- home ---------------- */
+const lockIconSvg = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 10V8a6 6 0 1112 0v2M5 10h14a1 1 0 011 1v9a1 1 0 01-1 1H5a1 1 0 01-1-1v-9a1 1 0 011-1z" stroke="#8B9086" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const leafIconSvg = '<svg width="28" height="28" viewBox="0 0 100 100"><use href="#leafIcon"/></svg>';
+
+async function renderHome(){
+  if(!currentUser) return;
+  document.getElementById('homeGreeting').textContent = `Hi, ${currentUser.name} 👋`;
+  document.getElementById('homeSub').textContent = `${currentUser.grade} · ready for today's test?`;
+
+  const results = (await storageGet('results:' + currentUser.username)) || [];
+  const completedIds = getCompletedModuleIds(results);
+
+  document.getElementById('statAttempts').textContent = results.length;
+  if(results.length){
+    const best = Math.max(...results.map(r => r.score));
+    const avg = Math.round(results.reduce((a,r) => a + (r.score / r.total) * 100, 0) / results.length);
+    document.getElementById('statBest').textContent = best + '/' + results[results.length - 1].total;
+    document.getElementById('statAvg').textContent = avg + '%';
+  } else {
+    document.getElementById('statBest').textContent = '–';
+    document.getElementById('statAvg').textContent = '–';
+  }
+
+  const pathEl = document.getElementById('pathList');
+  pathEl.innerHTML = '';
+  MODULES.forEach((mod, i) => {
+    const state = getModuleState(i, completedIds);
+    const done = completedIds.has(mod.id);
+    const node = document.createElement('div');
+    node.className = 'path-node' + (state === 'locked' ? ' locked' : '');
+    const caption = state === 'locked'
+      ? `Unlocks after ${MODULES[i - 1].title}`
+      : `5 questions · ${mod.subtitle}${done ? ' · Completed' : ''}`;
+    node.innerHTML = `
+      <button class="dot" ${state === 'locked' ? 'disabled' : ''} onclick="goTo('quiz','${mod.id}')">
+        ${state === 'locked' ? lockIconSvg : leafIconSvg}
+      </button>
+      <div class="info">
+        <h3>${mod.title}</h3>
+        <p>${caption}</p>
+      </div>`;
+    pathEl.appendChild(node);
+  });
+
+  const nextMod = pickNextModule(completedIds);
+  document.getElementById('startQuizBtn').textContent = completedIds.has(nextMod.id) ? 'Retake ' + nextMod.title : 'Start Quiz';
+  document.getElementById('startQuizBtn').dataset.moduleId = nextMod.id;
+}
+
+function startNextModule(){
+  const btn = document.getElementById('startQuizBtn');
+  goTo('quiz', btn.dataset.moduleId || MODULES[0].id);
+}
+
+/* ---------------- quiz ---------------- */
+function startQuiz(moduleId){
+  currentModule = MODULES.find(m => m.id === moduleId) || MODULES[0];
+  quizState = { index: 0, answers: [], locked: false };
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const total = currentModule.questions.length;
+  const q = currentModule.questions[quizState.index];
+  document.getElementById('qCount').textContent = `Question ${quizState.index + 1} of ${total}`;
+  document.getElementById('qText').textContent = q.q;
+  document.getElementById('vineFill').style.width = ((quizState.index) / total * 100) + '%';
+
+  const optsEl = document.getElementById('qOptions');
+  optsEl.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const b = document.createElement('button');
+    b.className = 'option';
+    b.textContent = opt;
+    b.onclick = () => selectAnswer(i);
+    optsEl.appendChild(b);
+  });
+
+  quizState.locked = false;
+  const nextBtn = document.getElementById('qNextBtn');
+  nextBtn.disabled = true;
+  nextBtn.textContent = 'Check';
+}
+
+function selectAnswer(i){
+  if(quizState.locked) return;
+  quizState.locked = true;
+  const q = currentModule.questions[quizState.index];
+  const opts = document.querySelectorAll('#qOptions .option');
+  opts.forEach((el, idx) => {
+    el.disabled = true;
+    if(idx === q.correct) el.classList.add('correct');
+    else if(idx === i) el.classList.add('incorrect');
+  });
+  quizState.answers[quizState.index] = i;
+  const nextBtn = document.getElementById('qNextBtn');
+  nextBtn.disabled = false;
+  nextBtn.textContent = (quizState.index === currentModule.questions.length - 1) ? 'See results' : 'Continue';
+}
+
+async function nextQuestion(){
+  if(!quizState.locked) return;
+  if(quizState.index < currentModule.questions.length - 1){
+    quizState.index++;
+    renderQuestion();
+  } else {
+    document.getElementById('vineFill').style.width = '100%';
+    await finishQuiz();
+  }
+}
+
+function exitQuiz(){
+  goTo('home');
+}
+
+async function finishQuiz(){
+  const score = quizState.answers.reduce((total, ans, i) => total + (ans === currentModule.questions[i].correct ? 1 : 0), 0);
+  const total = currentModule.questions.length;
+  const pct = Math.round((score/total)*100);
+
+  const attempt = { moduleId: currentModule.id, module: currentModule.title, score, total, date: new Date().toISOString() };
+  const existing = (await storageGet('results:' + currentUser.username)) || [];
+  existing.push(attempt);
+  await storageSet('results:' + currentUser.username, existing);
+
+  renderResults(score, total, pct);
+  goTo('results');
+}
+
+function renderResults(score, total, pct){
+  document.getElementById('resultScore').textContent = `${score}/${total}`;
+  document.getElementById('resultPct').textContent = pct + '%';
+
+  let tier, msg;
+  if(pct >= 80){ tier = 'Growing strong 🌳'; msg = "You've really got the hang of this. Ready for the next module."; }
+  else if(pct >= 60){ tier = 'Budding nicely 🌿'; msg = 'Solid work — a bit more practice and you\'ll master it.'; }
+  else { tier = 'Just planted 🌱'; msg = 'Everyone starts somewhere — try again to grow your score.'; }
+  document.getElementById('resultTier').textContent = tier;
+  document.getElementById('resultMsg').textContent = msg;
+
+  const breakdown = document.getElementById('resultBreakdown');
+  breakdown.innerHTML = '';
+  currentModule.questions.forEach((q, i) => {
+    const correct = quizState.answers[i] === q.correct;
+    const row = document.createElement('div');
+    row.className = 'breakdown-item';
+    row.innerHTML = `
+      <div class="mark">${correct ? '✅' : '❌'}</div>
+      <div class="txt">${q.q}
+        <span class="sub">Your answer: ${q.options[quizState.answers[i]] ?? '—'}${correct ? '' : ' · Correct: ' + q.options[q.correct]}</span>
+      </div>`;
+    breakdown.appendChild(row);
+  });
+}
+
+/* ---------------- progress ---------------- */
+async function renderProgress(){
+  const results = (await storageGet('results:' + currentUser.username)) || [];
+  const listEl = document.getElementById('progressList');
+  listEl.innerHTML = '';
+  if(!results.length){
+    listEl.innerHTML = '<div class="empty-state">No tests taken yet.<br>Start "Money Basics" to see your progress here.</div>';
+    return;
+  }
+  results.slice().reverse().forEach(r => {
+    const d = new Date(r.date);
+    const row = document.createElement('div');
+    row.className = 'progress-item';
+    row.innerHTML = `
+      <div class="pi-left">
+        <h3>${r.module}</h3>
+        <p>${d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' })}</p>
+      </div>
+      <div class="pi-score">${r.score}/${r.total}</div>`;
+    listEl.appendChild(row);
+  });
+}
+
+/* ---------------- app startup ---------------- */
+/* Load questions.csv (falls back to sample questions if missing/invalid), then
+   restore the session if one exists, otherwise show the login screen as normal. */
+(async function initApp(){
+  await loadModulesFromCSV();
+  currentModule = MODULES[0];
+  if(currentUser){
+    goTo('home');
+  }
+})();
+</script>
+
+</body>
+</html>
