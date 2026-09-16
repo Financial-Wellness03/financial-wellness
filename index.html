@@ -290,7 +290,7 @@
       </div>
     </div>
     <div class="greeting">
-      <h1 id="homeGreeting">Hi there 👋</h1>
+      <h1 id="homeGreeting">Hi there </h1>
       <p id="homeSub">Ready to grow your money skills today?</p>
     </div>
 
@@ -369,7 +369,7 @@
 </svg>
 
 <script>
-/* ---------------- storage helpers (with in-memory fallback) ---------------- */
+/* ---------------- storage helpers (this has in-memory fallback) ---------------- */
 const memStore = {};
 async function storageSet(key, value){
   try{
@@ -776,7 +776,7 @@ const leafIconSvg = '<svg width="28" height="28" viewBox="0 0 100 100"><use href
 
 async function renderHome(){
   if(!currentUser) return;
-  document.getElementById('homeGreeting').textContent = `Hi, ${currentUser.name} 👋`;
+  document.getElementById('homeGreeting').textContent = `Hi, ${currentUser.name} `;
   document.getElementById('homeSub').textContent = `${currentUser.grade} · ready for today's test?`;
 
   const results = (await storageGet('results:' + currentUser.username)) || [];
