@@ -26,7 +26,10 @@
 
   body{
     font-family:'Nunito', sans-serif;
-    background:var(--cream);
+    background:
+      radial-gradient(circle at 7% 12%, rgba(47,166,113,.10) 0 90px, transparent 250px),
+      radial-gradient(circle at 94% 78%, rgba(217,167,61,.08) 0 110px, transparent 300px),
+      var(--cream);
     color:var(--ink);
     min-height:100vh;
     position:relative;
@@ -39,9 +42,15 @@
     color:var(--forest);
   }
 
-  /* decorative background motifs, with an echoing the tree/leaf/coin mark */
-  .bg-decor{position:fixed; inset:0; z-index:0; pointer-events:none;}
-  .bg-decor svg{position:absolute; opacity:0.5;}
+  /* ---------- calm financial-growth background ---------- */
+  .bg-decor{position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;}
+  .bg-decor svg{position:absolute; overflow:visible;}
+  .bg-decor .blob{filter:blur(.2px);}
+  .bg-decor .growth-line{fill:none; stroke:var(--meadow); stroke-width:1.2; opacity:.15;}
+  .bg-decor .growth-line.gold{stroke:var(--gold); opacity:.12;}
+  .bg-decor .dot{fill:var(--forest); opacity:.10;}
+  .bg-decor .dot.gold{fill:var(--gold); opacity:.16;}
+  .bg-decor .leaf-mark{fill:var(--meadow); opacity:.12;}
 
   .stage{
     position:relative;
@@ -72,7 +81,7 @@
   .screen{display:none; flex:1; flex-direction:column; padding:0 24px 32px;}
   .screen.active{display:flex;}
 
-  /* ---------- buttons ---------- */
+  /* ---------- buttons: chunky "press" style ---------- */
   .btn{
     font-family:'Fredoka';
     font-size:16px;
@@ -123,6 +132,22 @@
   .form-error{
     background:#FBEAE5; color:var(--brick-dark); font-weight:700; font-size:13px;
     padding:10px 12px; border-radius:10px; margin-bottom:14px; display:none;
+  }
+
+  /* ---------- logo image ---------- */
+  .app-logo{
+    display:block;
+    width:88px;
+    height:88px;
+    margin:6px auto 10px;
+    object-fit:contain;
+  }
+  .topbar .app-logo-small{
+    width:30px;
+    height:30px;
+    margin:0;
+    object-fit:contain;
+    flex-shrink:0;
   }
 
   /* ---------- login / signup ---------- */
@@ -226,10 +251,32 @@
   .back-row h1{font-size:19px;}
 
   .save-note{font-size:11.5px; color:var(--ink-soft); text-align:center; margin-top:auto; padding-top:18px; font-weight:600;}
+
+  /* ---------- responsive background treatment ---------- */
+  @media (max-width:640px){
+    body{
+      background:
+        radial-gradient(circle at 8% 10%, rgba(47,166,113,.10) 0 55px, transparent 155px),
+        radial-gradient(circle at 96% 88%, rgba(217,167,61,.07) 0 70px, transparent 190px),
+        var(--cream);
+    }
+    .stage{background:transparent;}
+    .bg-decor .desktop-only{display:none;}
+    .bg-decor .mobile-line{opacity:.8;}
+  }
+
+  @media (min-width:641px){
+    .bg-decor .mobile-only{display:none;}
+  }
 </style>
 </head>
 <body>
 
+<!--
+  LOGO: Place your logo image in the same GitHub repository as this HTML file
+  and name it "logo.png". You can also change the src below to another relative path,
+  for example: images/logo.png or assets/financial-wellness-logo.png
+-->
 <div class="bg-decor" id="bgDecor"></div>
 
 <div class="stage">
@@ -237,7 +284,7 @@
   <!-- ============ LOGIN ============ -->
   <div class="screen active" id="screen-login">
     <div class="auth-hero">
-      <svg class="tree-lg" viewBox="0 0 100 100"><use href="#treeIcon"/></svg>
+      <img class="app-logo" src="logo.png" alt="Financial Wellness logo">
       <h1>Financial Wellness</h1>
       <p>Learn it. Practice it. Grow it.</p>
     </div>
@@ -291,7 +338,7 @@
   <!-- ============ HOME ============ -->
   <div class="screen" id="screen-home">
     <div class="topbar">
-      <svg width="30" height="30" viewBox="0 0 100 100"><use href="#treeIcon"/></svg>
+      <img class="app-logo-small" src="logo.png" alt="Financial Wellness logo">
       <div class="wordmark">Financial Wellness</div>
       <div style="margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
         <button class="link-btn" onclick="logout()">Log out</button>
@@ -299,7 +346,7 @@
       </div>
     </div>
     <div class="greeting">
-      <h1 id="homeGreeting">Hi there </h1>
+      <h1 id="homeGreeting">Hi there 👋</h1>
       <p id="homeSub">Ready to grow your money skills today?</p>
     </div>
 
@@ -324,7 +371,10 @@
     </div>
     <div class="q-wrap">
       <div class="q-count" id="qCount">Question 1 of 5</div>
-      <h2 id="qText">Question text</h2>
+      <div style="display:flex; align-items:flex-start; gap:10px;">
+        <h2 id="qText" style="flex:1; margin:0;">Question text</h2>
+        <button id="readAloudBtn" class="pill-btn" style="flex-shrink:0; margin-top:2px;" onclick="readQuestionAloud()" title="Read question and options aloud">🔊 Read aloud</button>
+      </div>
       <div class="options" id="qOptions"></div>
       <div class="q-footer">
         <button class="btn" id="qNextBtn" disabled onclick="nextQuestion()">Check</button>
@@ -359,7 +409,7 @@
 
 </div>
 
-<!-- shared icon -->
+<!-- shared icon defs -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
     <g id="treeIcon">
@@ -377,10 +427,44 @@
 </svg>
 
 <script>
+/* ---------------- read-aloud (Web Speech API, built into the browser — no backend/API needed) ---------------- */
+const speechSupported = 'speechSynthesis' in window;
+const letters = ['A', 'B', 'C', 'D'];
+
+function readQuestionAloud(){
+  if(!speechSupported) return;
+  if(window.speechSynthesis.speaking){
+    stopReadingAloud();
+    return;
+  }
+  const q = currentModule.questions[quizState.index];
+  const parts = [q.q, ...q.options.map((opt, i) => `Option ${letters[i]}: ${opt}`)];
+  const btn = document.getElementById('readAloudBtn');
+  let i = 0;
+  function speakNext(){
+    if(i >= parts.length){ if(btn) btn.textContent = '🔊 Read aloud'; return; }
+    const utter = new SpeechSynthesisUtterance(parts[i]);
+    utter.rate = 0.95;
+    utter.onend = () => { i++; speakNext(); };
+    utter.onerror = () => { if(btn) btn.textContent = '🔊 Read aloud'; };
+    window.speechSynthesis.speak(utter);
+  }
+  if(btn) btn.textContent = '⏹ Stop';
+  speakNext();
+}
+
+function stopReadingAloud(){
+  if(!speechSupported) return;
+  window.speechSynthesis.cancel();
+  const btn = document.getElementById('readAloudBtn');
+  if(btn) btn.textContent = '🔊 Read aloud';
+}
+
 /* ---------------- storage helpers (localStorage-backed, with in-memory fallback) ---------------- */
-/*  On GitHub Pages this uses localStorage instead, which actually persists
+/* window.storage only exists inside Claude's own artifact preview, not on a published site
+   like GitHub Pages. On GitHub Pages this uses localStorage instead, which actually persists
    on that browser/device across refreshes and tab closes (until cleared or a real backend
-   database replaces this...waiting on mySQL to be added). */
+   database replaces this). */
 const memStore = {};
 async function storageSet(key, value){
   try{
@@ -405,12 +489,48 @@ async function storageGet(key){
 
 /* ---------------- decorative background ---------------- */
 document.getElementById('bgDecor').innerHTML = `
-  <svg viewBox="0 0 100 100" width="140" style="top:60px; left:-40px;"><use href="#leafIcon" fill="#2FA671" opacity="0.15"/></svg>
-  <svg viewBox="0 0 24 24" width="60" style="top:220px; right:-20px;"><circle cx="12" cy="12" r="10" fill="#D9A73D" opacity="0.18"/></svg>
-  <svg viewBox="0 0 24 24" width="40" style="bottom:120px; left:-10px;"><circle cx="12" cy="12" r="10" fill="#1B5E44" opacity="0.1"/></svg>
+  <!-- Desktop: large organic shapes + subtle growth-chart lines -->
+  <svg class="desktop-only blob" width="520" height="520" viewBox="0 0 520 520" style="left:-250px; top:-180px;">
+    <path d="M85 110 C170 15 355 30 430 135 C505 240 420 420 270 445 C120 470 15 375 28 245 C35 190 48 150 85 110Z" fill="#2FA671" opacity=".055"/>
+    <path d="M105 125 C180 55 330 55 395 145" class="growth-line"/>
+  </svg>
+  <svg class="desktop-only blob" width="620" height="620" viewBox="0 0 620 620" style="right:-315px; bottom:-285px;">
+    <path d="M115 150 C205 55 390 45 500 150 C595 240 570 420 430 505 C285 592 95 520 48 365 C20 275 55 215 115 150Z" fill="#D9A73D" opacity=".045"/>
+    <path d="M95 390 C170 325 225 350 285 285 C350 215 405 245 520 155" class="growth-line gold"/>
+  </svg>
+  <svg class="desktop-only" width="300" height="170" viewBox="0 0 300 170" style="left:3%; top:46%;">
+    <path d="M0 135 C45 120 58 95 98 102 C135 108 144 65 181 72 C220 80 232 38 300 18" class="growth-line"/>
+    <circle cx="98" cy="102" r="3" class="dot"/>
+    <circle cx="181" cy="72" r="3" class="dot gold"/>
+    <circle cx="300" cy="18" r="3" class="dot"/>
+  </svg>
+  <svg class="desktop-only" width="280" height="190" viewBox="0 0 280 190" style="right:1%; top:16%;">
+    <path d="M0 145 C55 155 68 110 110 118 C150 125 174 65 210 75 C235 82 252 48 280 30" class="growth-line gold"/>
+    <circle cx="110" cy="118" r="3" class="dot gold"/>
+    <circle cx="210" cy="75" r="3" class="dot"/>
+  </svg>
+  <svg class="desktop-only" width="150" height="150" viewBox="0 0 100 100" style="left:2%; bottom:7%;">
+    <use href="#leafIcon" class="leaf-mark"/>
+  </svg>
+  <svg class="desktop-only" width="110" height="110" viewBox="0 0 100 100" style="right:4%; bottom:11%; transform:rotate(25deg);">
+    <use href="#leafIcon" class="leaf-mark"/>
+  </svg>
+
+  <!-- Mobile: smaller, quieter decoration so the lesson list stays clear -->
+  <svg class="mobile-only mobile-line" width="180" height="120" viewBox="0 0 180 120" style="left:-70px; top:80px;">
+    <path d="M0 95 C35 80 48 45 78 58 C105 70 125 38 180 18" class="growth-line"/>
+    <circle cx="78" cy="58" r="2.5" class="dot"/>
+    <circle cx="180" cy="18" r="2.5" class="dot gold"/>
+  </svg>
+  <svg class="mobile-only" width="120" height="120" viewBox="0 0 100 100" style="right:-55px; bottom:40px; transform:rotate(18deg);">
+    <use href="#leafIcon" class="leaf-mark"/>
+  </svg>
+  <svg class="mobile-only" width="80" height="80" viewBox="0 0 100 100" style="left:-35px; bottom:22%;">
+    <circle cx="50" cy="50" r="42" fill="#D9A73D" opacity=".045"/>
+  </svg>
 `;
 
-/* ---------------- fallback quiz content (basically the default, used if questions.csv isn't found) ---------------- */
+/* ---------------- fallback quiz content (used if questions.csv isn't found) ---------------- */
 const FALLBACK_MODULES = [
   {
     id: 'money-basics',
@@ -878,7 +998,7 @@ const leafIconSvg = '<svg width="28" height="28" viewBox="0 0 100 100"><use href
 
 async function renderHome(){
   if(!currentUser) return;
-  document.getElementById('homeGreeting').textContent = `Hi, ${currentUser.name} `;
+  document.getElementById('homeGreeting').textContent = `Hi, ${currentUser.name} 👋`;
   document.getElementById('homeSub').textContent = `${currentUser.grade} · ready for today's test?`;
 
   const results = (await storageGet('results:' + currentUser.username)) || [];
@@ -942,6 +1062,9 @@ function startQuiz(moduleId){
 }
 
 function renderQuestion(){
+  stopReadingAloud();
+  const readBtn = document.getElementById('readAloudBtn');
+  if(readBtn) readBtn.style.display = speechSupported ? '' : 'none';
   const total = currentModule.questions.length;
   const q = currentModule.questions[quizState.index];
   document.getElementById('qCount').textContent = `Question ${quizState.index + 1} of ${total}`;
@@ -992,6 +1115,7 @@ async function nextQuestion(){
 }
 
 function exitQuiz(){
+  stopReadingAloud();
   goTo('home');
 }
 
