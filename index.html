@@ -338,7 +338,7 @@
   <!-- ============ HOME ============ -->
   <div class="screen" id="screen-home">
     <div class="topbar">
-      <img class="app-logo-small" src="logo.png" alt="Financial Wellness logo">
+      <img class="app-logo-small" src="logo.jpg" alt="Financial Wellness logo">
       <div class="wordmark">Financial Wellness</div>
       <div style="margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
         <button class="link-btn" onclick="logout()">Log out</button>
@@ -346,7 +346,7 @@
       </div>
     </div>
     <div class="greeting">
-      <h1 id="homeGreeting">Hi there 👋</h1>
+      <h1 id="homeGreeting">Hi there </h1>
       <p id="homeSub">Ready to grow your money skills today?</p>
     </div>
 
@@ -461,10 +461,9 @@ function stopReadingAloud(){
 }
 
 /* ---------------- storage helpers (localStorage-backed, with in-memory fallback) ---------------- */
-/* window.storage only exists inside Claude's own artifact preview, not on a published site
-   like GitHub Pages. On GitHub Pages this uses localStorage instead, which actually persists
+/* On GitHub Pages this uses localStorage instead, which actually persists
    on that browser/device across refreshes and tab closes (until cleared or a real backend
-   database replaces this). */
+   database replaces this...will wait on mySQL to come in). */
 const memStore = {};
 async function storageSet(key, value){
   try{
@@ -998,7 +997,7 @@ const leafIconSvg = '<svg width="28" height="28" viewBox="0 0 100 100"><use href
 
 async function renderHome(){
   if(!currentUser) return;
-  document.getElementById('homeGreeting').textContent = `Hi, ${currentUser.name} 👋`;
+  document.getElementById('homeGreeting').textContent = `Hi, ${currentUser.name} `;
   document.getElementById('homeSub').textContent = `${currentUser.grade} · ready for today's test?`;
 
   const results = (await storageGet('results:' + currentUser.username)) || [];
